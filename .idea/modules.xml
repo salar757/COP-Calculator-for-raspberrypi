@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/CopCalculatorOne.iml" filepath="$PROJECT_DIR$/CopCalculatorOne.iml" />
+      <module fileurl="file://$PROJECT_DIR$/CopCalculatorStorage.iml" filepath="$PROJECT_DIR$/CopCalculatorStorage.iml" />
+    </modules>
+  </component>
+</project>
