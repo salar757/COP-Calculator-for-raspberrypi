@@ -1,0 +1,10 @@
+modprobe w1-gpio
+modprobe w1-therm
+
+/sys/bus/w1/devices/
+cat w1_slave
+
+yellowGreen 28-01205fb194d5
+Red         28-01205fc82ac9
+Gray	    28-01205fd15c16
+RedGray	    28-01205fd5eb03
