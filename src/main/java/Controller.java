@@ -52,13 +52,25 @@ public class Controller implements Initializable{
         final SimpleDateFormat fileDateFormat = new SimpleDateFormat("dd_MM_yy");
         final SimpleDateFormat weekDateFormat = new SimpleDateFormat("ww");
 
-        AvCalculator average = new AvCalculator();
+        AvCalculator wattAverage = new AvCalculator();
+        AvCalculator COPAverage = new AvCalculator();
         WattCounter wattCounter = new WattCounter();
         try {
             wattCounter.wattCounting();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        TempSensor tmpYellow = new  TempSensor("28-01205fb194d5");
+        TempSensor tmpRed = new     TempSensor("28-01205fc82ac9");
+        TempSensor tmpGray = new    TempSensor("28-01205fd15c16");
+        TempSensor tmpRedGray = new TempSensor("28-01205fd5eb03");
+
+        final int waterHeatCapcityPerKG = 4184;
+        final int airHeatCapcityPerKG = 700;
+        final int waterCapcity = 200;
+        final double[] minuteCop = {0};
+        final int[] prevTempRed = {tmpRed.getTemp()};
 
         realTimelineChart.setTitle("Realtime Graph demo");
         realTimelineChart.setAnimated(false); // disable animations
@@ -87,23 +99,88 @@ public class Controller implements Initializable{
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
         scheduledExecutorService.scheduleAtFixedRate(() -> {
-            // get a random integer between 0-10
-            Integer random = ThreadLocalRandom.current().nextInt(50);
+            System.out.println("fixed scheduled Executer just started");
 
             Date now = new Date();
 
-            int ran = 0;
+
+            // multiplied by 10 and divided by 2 to get watts in 60 seconds
+            // the number of watts is given multiplied by 10 to remain as an int
+            // when divided by 2
+            wattAverage.setAverage((wattCounter.getWatt()*10)/2);
+
+
+            tmpYellow.setTemp();
+            tmpYellow.setAverageTemp();
+
+
+            tmpRed.setTemp();
+            tmpRed.setAverageTemp();
+
+
+            tmpGray.setTemp();
+            tmpGray.setAverageTemp();
+
+
+            tmpRedGray.setTemp();
+            tmpRedGray.setAverageTemp();
+
+
+            int wattJoules = ((wattCounter.getWatt()/2)* 60);
+            System.out.println("watt Joules = " + wattJoules);
+            double tempDiffrenceOne = (tmpRed.getTemp() -
+                    prevTempRed[0]);
+            double tempDiffrence = tempDiffrenceOne/10000;
+
+            System.out.println("Temp diffrence = " + tempDiffrence);
+
+            double tempJoules = tempDiffrence * waterHeatCapcityPerKG * waterCapcity;
+
+            System.out.println("tempJoules = " + tempJoules);
+
+            System.out.println(wattJoules);// 0
+            System.out.println(tempJoules);// 120000
+
+            //todo: change this bellow!
+
+            prevTempRed[0] = tmpRed.getTemp();
+
+            if(wattJoules == 0){
+                minuteCop[0] = 0;
+            }else{
+                minuteCop[0] = tempJoules/wattJoules;
+            }
+
+
+
+            COPAverage.setAverage(minuteCop[0]);
 
             System.out.println("Minute for watts is " +
-                    wattCounter.getWatt());
+                    wattCounter.getWatt()/2);
+
+            System.out.println("Minute for tmp yellow is " +
+                    tmpYellow.getTemp());
+
+            System.out.println("Minute for tmp red is " +
+                    tmpRed.getTemp());
+
+            System.out.println("Minute for tmp gray is " +
+                    tmpGray.getTemp());
+
+            System.out.println("Minute for tmp red gray is " +
+                    tmpRedGray.getTemp());
+
+
+            System.out.println("Minute for COP is " +
+                    minuteCop[0]);
+
+            wattCounter.setTotalWatts();
+
+            System.out.println("total watts for the hour at the moment is " +
+                    wattCounter.getTotalWatts());
+
 
             wattCounter.resetCounter();
-
-            average.setAverage(random);
-
-
-
-            // makes name for file data with time for the miniute
 
 
             // Update the chart
@@ -111,7 +188,7 @@ public class Controller implements Initializable{
                 // get current time
 
                 // put random number with current time
-                series.getData().add(new XYChart.Data<>(simpleTimeFormat.format(now), random));
+                series.getData().add(new XYChart.Data<>(simpleTimeFormat.format(now), minuteCop[0]));
 
                 if (series.getData().size() > WINDOW_SIZE)
                     series.getData().remove(0);
@@ -123,7 +200,7 @@ public class Controller implements Initializable{
         scheduledExecutorService.scheduleAtFixedRate(() -> {
 
 
-
+            System.out.println(1);
 
 
             Date now = new Date();
@@ -131,41 +208,88 @@ public class Controller implements Initializable{
             String fileNamer = "saves/" + "(Date_" + fileDateFormat.format(now)
                     + ").txt";
 
+            System.out.println(2);
+
             double saverage = 0;
             for(int i = 0; i < 60; i++){
-                saverage = saverage + average.getAverage()[i];
+                saverage = saverage + wattAverage.getAverage()[i];
             }
+
+            System.out.println(3);
+
+            double CopSaverage = 0;
+            for(int i = 0; i < 60; i++){
+                CopSaverage = CopSaverage + COPAverage.getAverage()[i];
+            }
+
+            System.out.println(4);
+
+            double yellowSaverage = 0;
+            for(int i = 0; i < 60; i++){
+                yellowSaverage = yellowSaverage + tmpYellow.getAverageTemp()[i];
+            }
+            System.out.println(5);
+
+            double redSaverage = 0;
+            for(int i = 0; i < 60; i++){
+                redSaverage = redSaverage + tmpRed.getAverageTemp()[i];
+            }
+            System.out.println(6);
+
+            double graySaverage = 0;
+            for(int i = 0; i < 60; i++){
+                graySaverage = graySaverage + tmpGray.getAverageTemp()[i];
+            }
+            System.out.println(7);
+
+            double redGraySaverage = 0;
+            for(int i = 0; i < 60; i++){
+                redGraySaverage = redGraySaverage + tmpRedGray.getAverageTemp()[i];
+            }
+            System.out.println(8);
+
 
             int maverage = (int)Math.round((saverage/60)*10);
+            int COPMaverage = (int)Math.round((CopSaverage/60)*10);
+            int yellowMaverage = (int)Math.round((yellowSaverage/60));
+            int redMaverage = (int)Math.round((redSaverage/60));
+            int grayMaverage = (int)Math.round((graySaverage/60));
+            int redGrayMaverage = (int)Math.round((redGraySaverage/60));
 
+            System.out.println(9);
 
+            if ((wattCounter.getTotalWatts() / 2) >= 50){
 
+                try {
+                    FileWriter writeToFile = new FileWriter(fileNamer, true);
+                    writeToFile.write("|Date: " + simpleDateFormat.format(now) + " |time:" + simpleTimeFormat.format(now) + " |COP:"
+                            + String.format("%05d",COPMaverage) + " |tmp1:" + String.format("%07d",yellowMaverage) + " |tmp2:" + String.format("%07d",redMaverage) +
+                            " |tmp3:" + String.format("%07d",grayMaverage) + " |tmp4:" + String.format("%07d",redGrayMaverage) +
+                            " |watt:" + String.format("%011d", (wattCounter.getTotalWatts() / 2) ) + "\n");
+                    writeToFile.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
+            }else{
 
-            try {
-                FileWriter writeToFile = new FileWriter(fileNamer, true);
-                writeToFile.write("|Date: " + simpleDateFormat.format(now) + " |time:" + simpleTimeFormat.format(now) + " |COP:"
-                        + String.format("%05d",maverage) + " |tmp1:" + String.format("%07d",maverage) + " |tmp2:" + String.format("%07d",maverage) +
-                        " |tmp3:" + String.format("%07d",maverage) + " |tmp4:" + String.format("%07d",maverage) +
-                        " |watt:"+ String.format("%011d",maverage) + "\n");
-                writeToFile.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println("less than 50 watts used so heat pump is off!");
             }
 
-            average.resetAverage();
+            System.out.println(10);
 
+            wattAverage.resetAverage();
+            COPAverage.resetAverage();
+            tmpYellow.resetAverageTempCounter();
+            tmpRed.resetAverageTempCounter();
+            tmpGray.resetAverageTempCounter();
+            tmpRedGray.resetAverageTempCounter();
+            wattCounter.resetTotalWatts();
+
+            System.out.println(11);
 
 
             }, 59, 60, TimeUnit.MINUTES);
-
-
-
-
-        // put dummy data onto graph per second
-
-
-
 
 
 

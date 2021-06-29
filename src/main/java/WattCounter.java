@@ -33,6 +33,19 @@ public class WattCounter {
 
     }
 
+    public void setTotalWatts() {
+        counter.addNumber(counter.getCounter());
+    }
+
+    public int getTotalWatts() {
+        return counter.getNumber();
+    }
+
+    public void resetTotalWatts(){
+        counter.resetNumber();
+    }
+
+
     public void resetCounter(){
         counter.resetCounter();
     }
