@@ -69,8 +69,10 @@ public class Controller implements Initializable{
         final int waterHeatCapcityPerKG = 4184;
         final int airHeatCapcityPerKG = 700;
         final int waterCapcity = 200;
+        final double CTU = 2.205 * 200.0;
+        final double BTU = CTU * 1.8;
         final double[] minuteCop = {0};
-        final int[] prevTempRed = {tmpRed.getTemp()};
+
 
         realTimelineChart.setTitle("Realtime Graph demo");
         realTimelineChart.setAnimated(false); // disable animations
@@ -92,6 +94,15 @@ public class Controller implements Initializable{
         // add series to chart
         realTimelineChart.getData().add(series);
         setTimeLineChart.getData().add(setSeries);
+
+        tmpRed.setTemp();
+        tmpGray.setTemp();
+
+        int[] prevTempRed = {tmpRed.getTemp()};
+        int[] prevTempGray = {tmpGray.getTemp()};
+
+        System.out.println("RedPrev = " + prevTempRed[0] + "GrayPrev = " +
+                prevTempGray[0]);
 
 
 
@@ -126,29 +137,43 @@ public class Controller implements Initializable{
             tmpRedGray.setAverageTemp();
 
 
-            int wattJoules = ((wattCounter.getWatt()/2)* 60);
-            System.out.println("watt Joules = " + wattJoules);
-            double tempDiffrenceOne = (tmpRed.getTemp() -
+            double watts = ((wattCounter.getWatt()/2));
+            System.out.println("watts = " + watts);
+            double wattBTU = watts * 3.412141633;
+            double tempDiffrenceRed = (tmpRed.getTemp() -
                     prevTempRed[0]);
-            double tempDiffrence = tempDiffrenceOne/10000;
+            double tempDiffrenceR = tempDiffrenceRed/10000;
+
+            double tempDiffrenceGray = (tmpGray.getTemp() -
+                    prevTempGray[0]);
+            double tempDiffrenceG = tempDiffrenceGray/10000;
+
+            double tempDiffrence = (tempDiffrenceR + tempDiffrenceG)/2;
+
+            System.out.println("Temp diffrenceRed = " + tempDiffrenceR);
+            System.out.println("Temp diffrenceGray = " + tempDiffrenceG);
 
             System.out.println("Temp diffrence = " + tempDiffrence);
 
-            double tempJoules = tempDiffrence * waterHeatCapcityPerKG * waterCapcity;
 
-            System.out.println("tempJoules = " + tempJoules);
 
-            System.out.println(wattJoules);// 0
-            System.out.println(tempJoules);// 120000
+            double tempCTU = tempDiffrence * 2.205 * waterCapcity;
+            double tempBTU = tempCTU * 1.7999997485593;
+
+            System.out.println("tempCTU = " + tempCTU + " and tempBTU is " + tempBTU);
+
+            System.out.println("wattBTU = " + wattBTU);// 0
+
 
             //todo: change this bellow!
 
             prevTempRed[0] = tmpRed.getTemp();
+            prevTempGray[0] = tmpGray.getTemp();
 
-            if(wattJoules == 0){
+            if(wattBTU == 0){
                 minuteCop[0] = 0;
             }else{
-                minuteCop[0] = tempJoules/wattJoules;
+                minuteCop[0] = tempBTU/wattBTU;
             }
 
 
@@ -193,14 +218,12 @@ public class Controller implements Initializable{
                 if (series.getData().size() > WINDOW_SIZE)
                     series.getData().remove(0);
             });
-        }, 0, 60, TimeUnit.SECONDS);// you can edit time of intervals here
+        }, 0, 30, TimeUnit.MINUTES);// you can edit time of intervals here
 
 
 
         scheduledExecutorService.scheduleAtFixedRate(() -> {
 
-
-            System.out.println(1);
 
 
             Date now = new Date();
@@ -208,55 +231,48 @@ public class Controller implements Initializable{
             String fileNamer = "saves/" + "(Date_" + fileDateFormat.format(now)
                     + ").txt";
 
-            System.out.println(2);
 
             double saverage = 0;
-            for(int i = 0; i < 60; i++){
+            for(int i = 0; i < 2; i++){
                 saverage = saverage + wattAverage.getAverage()[i];
             }
 
-            System.out.println(3);
 
             double CopSaverage = 0;
-            for(int i = 0; i < 60; i++){
+            for(int i = 0; i < 2; i++){
                 CopSaverage = CopSaverage + COPAverage.getAverage()[i];
             }
 
-            System.out.println(4);
 
             double yellowSaverage = 0;
-            for(int i = 0; i < 60; i++){
+            for(int i = 0; i < 2; i++){
                 yellowSaverage = yellowSaverage + tmpYellow.getAverageTemp()[i];
             }
-            System.out.println(5);
 
             double redSaverage = 0;
-            for(int i = 0; i < 60; i++){
+            for(int i = 0; i < 2; i++){
                 redSaverage = redSaverage + tmpRed.getAverageTemp()[i];
             }
-            System.out.println(6);
 
             double graySaverage = 0;
-            for(int i = 0; i < 60; i++){
+            for(int i = 0; i < 2; i++){
                 graySaverage = graySaverage + tmpGray.getAverageTemp()[i];
             }
-            System.out.println(7);
+
 
             double redGraySaverage = 0;
-            for(int i = 0; i < 60; i++){
+            for(int i = 0; i < 2; i++){
                 redGraySaverage = redGraySaverage + tmpRedGray.getAverageTemp()[i];
             }
-            System.out.println(8);
 
 
-            int maverage = (int)Math.round((saverage/60)*10);
-            int COPMaverage = (int)Math.round((CopSaverage/60)*10);
-            int yellowMaverage = (int)Math.round((yellowSaverage/60));
-            int redMaverage = (int)Math.round((redSaverage/60));
-            int grayMaverage = (int)Math.round((graySaverage/60));
-            int redGrayMaverage = (int)Math.round((redGraySaverage/60));
+            int maverage = (int)Math.round((saverage/2)*10);
+            int COPMaverage = (int)Math.round((CopSaverage/2)*10);
+            int yellowMaverage = (int)Math.round((yellowSaverage/2));
+            int redMaverage = (int)Math.round((redSaverage/2));
+            int grayMaverage = (int)Math.round((graySaverage/2));
+            int redGrayMaverage = (int)Math.round((redGraySaverage/2));
 
-            System.out.println(9);
 
             if ((wattCounter.getTotalWatts() / 2) >= 50){
 
@@ -276,7 +292,6 @@ public class Controller implements Initializable{
                 System.out.println("less than 50 watts used so heat pump is off!");
             }
 
-            System.out.println(10);
 
             wattAverage.resetAverage();
             COPAverage.resetAverage();
@@ -286,7 +301,6 @@ public class Controller implements Initializable{
             tmpRedGray.resetAverageTempCounter();
             wattCounter.resetTotalWatts();
 
-            System.out.println(11);
 
 
             }, 59, 60, TimeUnit.MINUTES);
